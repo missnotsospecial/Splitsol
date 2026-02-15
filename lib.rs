@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::clock::Clock;
 
-declare_id!("11111111111111111111111111111111"); // This will be replaced when you deploy
+declare_id!("HU4wkHJ97BBeabrchh94ZvMPViJrh8dCZfA3K5Cz1qbY"); // This will be replaced when you deploy
 
 #[program]
 pub mod splitsol {
@@ -101,47 +101,31 @@ pub mod splitsol {
     /// 4. Member's paid status is updated
     /// 5. If all members paid, expense is marked as settled
     pub fn pay_expense(ctx: Context<PayExpense>, member_index: u8) -> Result<()> {
-    let expense = &mut ctx.accounts.expense;
-    let group = &ctx.accounts.group;
-    
-    // 1. Validation
-    require!((member_index as usize) < group.members.len(), ErrorCode::InvalidMemberIndex);
-    let member_pubkey = group.members[member_index as usize];
-    require!(ctx.accounts.member.key() == member_pubkey, ErrorCode::UnauthorizedMember);
-    require!(!expense.paid_status[member_index as usize], ErrorCode::AlreadyPaid);
-    
-    let amount = expense.split_amounts[member_index as usize];
-    
-    // 2. Real SOL Transfer (Member -> Original Payer)
-    anchor_lang::solana_program::program::invoke(
-        &anchor_lang::solana_program::system_instruction::transfer(
-            &ctx.accounts.member.key(),
-            &ctx.accounts.payer.key(),
-            amount,
-        ),
-        &[
-            ctx.accounts.member.to_account_info(),
-            ctx.accounts.payer.to_account_info(),
-        ],
-    )?;
-
-    // 3. Update State
-    expense.paid_status[member_index as usize] = true;
-    if expense.paid_status.iter().all(|&paid| paid) {
-        expense.settled = true;
-    }
-    Ok(())
-}
+        let expense = &mut ctx.accounts.expense;
+        let group = &ctx.accounts.group;
         
+        // 1. Validation
+        require!((member_index as usize) < group.members.len(), ErrorCode::InvalidMemberIndex);
+        let member_pubkey = group.members[member_index as usize];
+        require!(ctx.accounts.member.key() == member_pubkey, ErrorCode::UnauthorizedMember);
+        require!(!expense.paid_status[member_index as usize], ErrorCode::AlreadyPaid);
+        
+        let amount = expense.split_amounts[member_index as usize];
+        
+        // 2. Real SOL Transfer (Member -> Original Payer)
         anchor_lang::solana_program::program::invoke(
-            &transfer_ix,
+            &anchor_lang::solana_program::system_instruction::transfer(
+                &ctx.accounts.member.key(),
+                &ctx.accounts.payer.key(),
+                amount,
+            ),
             &[
                 ctx.accounts.member.to_account_info(),
                 ctx.accounts.payer.to_account_info(),
             ],
         )?;
-        
-        // Mark as paid
+
+        // 3. Update State
         expense.paid_status[member_index as usize] = true;
         
         // Check if all members have paid
@@ -153,7 +137,6 @@ pub mod splitsol {
         msg!("✓ Member {} paid {} lamports", member_index, amount);
         Ok(())
     }
-
     /// Add a new member to an existing group
     /// 
     /// # Arguments
