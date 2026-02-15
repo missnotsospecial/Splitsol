@@ -3,46 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SplitSol - Ultimate Expense Splitter</title>
+    <title>SplitSol - Expense Splitter</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@coral-xyz/anchor@0.29.0/dist/browser.anchor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js"></script>
+    <script>window.Buffer = window.Buffer || buffer.Buffer;</script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         :root {
-            --primary: #FF6B6B; --primary-light: #FFD93D; --secondary: #667eea;
-            --success: #14F195; --danger: #FF5252; --white: #FFFFFF;
-            --charcoal: #2D3748; --radius-xl: 24px; --radius-lg: 16px;
+            --primary: #FF6B6B;
+            --primary-light: #FFD93D;
+            --secondary: #667eea;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #FF5252;
+            --white: #FFFFFF;
+            --light-gray: #F7F9FC;
+            --gray: #E8ECEF;
+            --medium-gray: #9BA4B5;
+            --charcoal: #2D3748;
+            --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --space-xl: 3rem;
+            --space-lg: 2rem;
+            --space-md: 1.5rem;
+            --space-sm: 1rem;
         }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #FFF9F0 0%, #FFE8CC 100%); min-height: 100vh; padding: 20px; color: var(--charcoal); }
         
-        /* Layout */
-        .header { max-width: 800px; margin: 0 auto 2rem; background: var(--white); padding: 1rem 1.5rem; border-radius: var(--radius-lg); box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .wallet-btn { padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%); color: var(--white); border: none; border-radius: 50px; font-weight: 600; cursor: pointer; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #FFF9F0 0%, #FFE8CC 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--charcoal);
+        }
         
-        .screen { display: none; max-width: 800px; margin: 0 auto; background: var(--white); padding: 2rem; border-radius: var(--radius-xl); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
+        .header {
+            max-width: 1000px;
+            margin: 0 auto 2rem;
+            background: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .wallet-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-size: 0.95rem;
+        }
+        
+        .wallet-btn:hover { transform: translateY(-2px); }
+        
+        .wallet-address {
+            padding: 0.5rem 1rem;
+            background: var(--light-gray);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .screen {
+            display: none;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: var(--space-xl);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            animation: fadeIn 0.3s;
+        }
+        
         .screen.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        h2 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--charcoal); }
+        .subtitle { color: var(--medium-gray); margin-bottom: var(--space-lg); font-size: 1.05rem; }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--medium-gray);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: var(--space-lg);
+            padding: 0.5rem 0;
+            transition: color 0.2s;
+        }
+        
+        .back-btn:hover { color: var(--primary); }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: var(--light-gray);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-label { font-size: 0.9rem; color: var(--medium-gray); margin-bottom: 0.5rem; font-weight: 500; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: var(--charcoal); }
+        
+        .menu-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-lg);
+            background: var(--white);
+            border: 2px solid var(--gray);
+            border-radius: var(--radius-lg);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        
+        .menu-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: transparent;
+        }
+        
+        .btn-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .btn-content { flex: 1; }
+        .btn-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .btn-desc { font-size: 0.95rem; color: var(--medium-gray); }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--charcoal); }
+        
+        .form-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--gray);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 1.25rem 2rem;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 1rem;
+        }
+        
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--charcoal);
+            color: var(--white);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 10000;
+        }
+        
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: none; align-items: center; justify-content: center; flex-direction: column;
+            z-index: 9999;
+        }
+        
+        .loading-overlay.show { display: flex; }
+        
+        .spinner {
+            width: 60px; height: 60px;
+            border: 4px solid var(--gray);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* UI Elements */
-        .menu-btn { width: 100%; padding: 1.5rem; background: var(--white); border: 2px solid #EEE; border-radius: var(--radius-lg); margin-bottom: 1rem; cursor: pointer; text-align: left; transition: 0.2s; }
-        .menu-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .form-input { width: 100%; padding: 1rem; border: 2px solid #EEE; border-radius: 12px; margin-bottom: 1rem; font-size: 1rem; }
-        .submit-btn { width: 100%; padding: 1.25rem; background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%); color: var(--white); border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
         
-        /* QR Grid */
-        .qr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
-        .qr-card { background: #F8FAFC; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center; border: 2px solid transparent; transition: 0.3s; }
-        .qr-card.paid { border-color: var(--success); background: #f0fff4; }
-        .qr-code { background: white; padding: 10px; border-radius: 10px; margin: 15px auto; display: flex; justify-content: center; }
-        
-        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #EEE; margin-bottom: 10px; }
-        .paid .status-badge { background: var(--success); color: #065f46; }
-        
-        .verify-btn { background: var(--secondary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; }
-        .back-link { color: var(--gray); text-decoration: none; font-size: 0.9rem; cursor: pointer; display: block; margin-bottom: 1rem; }
+        .qr-card {
+            background: var(--light-gray);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+
+        .qr-code {
+            background: var(--white);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin: 1rem auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .info-card {
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #FFF9F0 0%, #FFE8CC 100%);
+            border: 2px solid #FFD93D;
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
 <body>
@@ -50,159 +303,270 @@
     <div class="header">
         <div class="logo">💰 SplitSol</div>
         <button class="wallet-btn" id="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+        <div class="wallet-address" id="wallet-address" style="display: none;"></div>
     </div>
 
     <div id="dashboard" class="screen active">
-        <h1>Hey there!</h1>
-        <p style="color: #94a3b8; margin-bottom: 2rem;">Ready to split some bills on Solana?</p>
-        <button class="menu-btn" onclick="showScreen('create-group')">
-            <strong>+ Create New Group</strong><br><small>Add your friends' wallet addresses</small>
+        <h1>Welcome Back!</h1>
+        <p class="subtitle">Manage your expenses effortlessly with friends on Solana</p>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Groups</div>
+                <div class="stat-value" id="stat-groups">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending</div>
+                <div class="stat-value" id="stat-pending">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Settled</div>
+                <div class="stat-value" id="stat-settled">0</div>
+            </div>
+        </div>
+        
+        <button class="menu-btn" onclick="goTo('new-payment')">
+            <div class="btn-icon" style="background: linear-gradient(135deg, #FA8BFF 0%, #2BD2FF 90%);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 5V19M5 12H19"/></svg>
+            </div>
+            <div class="btn-content">
+                <div class="btn-title">New Payment</div>
+                <div class="btn-desc">Create or split a new expense</div>
+            </div>
         </button>
-        <button class="menu-btn" onclick="loadGroupsList();">
-            <strong>💳 Split an Expense</strong><br><small>Select a group and generate QRs</small>
+        
+        <button class="menu-btn" onclick="goTo('history')">
+            <div class="btn-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9L12 2L21 9V20C21 21 19 22 19 22H5C4 22 3 21 3 20V9Z"/></svg>
+            </div>
+            <div class="btn-content">
+                <div class="btn-title">Payment History</div>
+                <div class="btn-desc">View all transactions</div>
+            </div>
+        </button>
+    </div>
+
+    <div id="new-payment" class="screen">
+        <button class="back-btn" onclick="goTo('dashboard')">← Back</button>
+        <h2>New Payment</h2>
+        <button class="menu-btn" onclick="goTo('create-group')">
+            <div class="btn-content"><div class="btn-title">Create Friend Group</div></div>
+        </button>
+        <button class="menu-btn" onclick="goTo('use-existing')">
+            <div class="btn-content"><div class="btn-title">Use Existing Group</div></div>
         </button>
     </div>
 
     <div id="create-group" class="screen">
-        <span class="back-link" onclick="showScreen('dashboard')">← Back</span>
-        <h2>New Group</h2>
-        <input type="text" class="form-input" id="group-name" placeholder="Group Name (e.g. Pizza Night)">
-        <div id="friends-list">
-            <input type="text" class="form-input friend-address" placeholder="Friend's Wallet Address">
-        </div>
-        <button class="submit-btn" style="background:#667eea; margin-bottom:10px;" onclick="addFriendInput()">+ Add Friend</button>
-        <button class="submit-btn" onclick="saveGroup()">Create Group</button>
+        <button class="back-btn" onclick="goTo('new-payment')">← Back</button>
+        <h2>Create Group</h2>
+        <form onsubmit="return handleCreateGroup(event)">
+            <div class="form-group">
+                <label class="form-label">Group Name</label>
+                <input type="text" class="form-input" id="group-name" required>
+            </div>
+            <div class="form-group" id="friends-list">
+                <label class="form-label">Friend Wallet Address</label>
+                <input type="text" class="form-input friend-address" required>
+            </div>
+            <button type="button" class="submit-btn" style="background:none; color:var(--secondary); border:1px dashed;" onclick="addFriendInput()">+ Add Friend</button>
+            <button type="submit" class="submit-btn">Create Group</button>
+        </form>
     </div>
 
     <div id="use-existing" class="screen">
-        <span class="back-link" onclick="showScreen('dashboard')">← Back</span>
-        <h2>Select a Group</h2>
-        <div id="groups-container"></div>
+        <button class="back-btn" onclick="goTo('new-payment')">← Back</button>
+        <h2>Select Group</h2>
+        <div id="groups-list"></div>
     </div>
 
     <div id="expense-details" class="screen">
-        <span class="back-link" onclick="showScreen('use-existing')">← Back</span>
+        <button class="back-btn" onclick="goTo('use-existing')">← Back</button>
         <h2>Expense Details</h2>
-        <p id="target-group-name" style="font-weight: 600; margin-bottom: 1rem;"></p>
-        <input type="text" class="form-input" id="exp-desc" placeholder="What is this for?">
-        <input type="number" class="form-input" id="exp-amount" placeholder="Total SOL Amount">
-        <button class="submit-btn" onclick="generateQRs()">Generate & Track</button>
+        <div class="info-card" id="selected-group-info"></div>
+        <form onsubmit="return handleCreateExpense(event)">
+            <input type="text" class="form-input" id="expense-desc" placeholder="Dinner, Taxi, etc." required><br><br>
+            <input type="number" class="form-input" id="expense-amount" step="0.01" placeholder="SOL Amount" required>
+            <button type="submit" class="submit-btn">Generate Payment QRs</button>
+        </form>
     </div>
 
     <div id="payment-qr" class="screen">
-        <span class="back-link" onclick="showScreen('dashboard')">← Reset</span>
-        <h2>Scan & Pay</h2>
-        <p id="summary-text" style="color: #64748b; margin-bottom: 1rem;"></p>
-        <div class="qr-grid" id="qr-display"></div>
+        <button class="back-btn" onclick="goTo('dashboard')">← Back</button>
+        <h2>Scan to Pay</h2>
+        <div class="info-card" id="payment-qr-info"></div>
+        <div class="qr-grid" id="qr-grid"></div>
+    </div>
+
+    <div id="history" class="screen">
+        <button class="back-btn" onclick="goTo('dashboard')">← Back</button>
+        <h2>History</h2>
+        <div id="payments-list"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">Processing...</div>
     </div>
 
     <script>
-        const connection = new solanaWeb3.Connection("https://api.devnet.solana.com", "confirmed");
-        let state = {
-            groups: JSON.parse(localStorage.getItem('ss_groups') || '[]'),
-            selectedGroup: null
+        const PROGRAM_ID = 'HU4wkHJ97BBeabrchh94ZvMPViJrh8dCZfA3K5Cz1qbY';
+        const NETWORK = 'https://api.devnet.solana.com';
+        
+        const state = {
+            wallet: null,
+            connection: null,
+            selectedGroup: null,
+            groups: [],
+            expenses: []
         };
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        // --- WALLET ---
+        async function connectWallet() {
+            try {
+                if (!window.solana?.isPhantom) return showToast("Install Phantom", "error");
+                const resp = await window.solana.connect();
+                state.wallet = window.solana;
+                state.connection = new solanaWeb3.Connection(NETWORK, 'confirmed');
+                
+                document.getElementById('wallet-btn').style.display = 'none';
+                const addr = document.getElementById('wallet-address');
+                addr.style.display = 'block';
+                addr.textContent = resp.publicKey.toString().slice(0,6) + '...';
+                
+                loadUserData();
+                showToast("Connected!", "success");
+            } catch (e) { showToast("Failed to connect", "error"); }
         }
 
-        async function connectWallet() {
-            if (window.solana) {
-                const resp = await window.solana.connect();
-                document.getElementById('wallet-btn').textContent = resp.publicKey.toString().slice(0,6) + '...';
-            } else { alert("Please install Phantom!"); }
+        function loadUserData() {
+            state.groups = JSON.parse(localStorage.getItem('splitsol_groups') || '[]');
+            state.expenses = JSON.parse(localStorage.getItem('splitsol_expenses') || '[]');
+            updateStats();
         }
+
+        // --- NAVIGATION ---
+        function goTo(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'use-existing') renderGroups();
+            if(id === 'history') renderHistory();
+        }
+
+        function showToast(m, t) {
+            const el = document.getElementById('toast');
+            el.textContent = m;
+            el.className = `toast ${t} show`;
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        function showLoading(m) {
+            document.getElementById('loading-text').textContent = m;
+            document.getElementById('loading').classList.add('show');
+        }
+
+        function hideLoading() { document.getElementById('loading').classList.remove('show'); }
 
         function addFriendInput() {
             const input = document.createElement('input');
             input.className = 'form-input friend-address';
-            input.placeholder = "Friend's Wallet Address";
+            input.style.marginTop = '10px';
+            input.placeholder = 'Address';
             document.getElementById('friends-list').appendChild(input);
         }
 
-        function saveGroup() {
+        // --- LOGIC ---
+        function handleCreateGroup(e) {
+            e.preventDefault();
             const name = document.getElementById('group-name').value;
-            const members = Array.from(document.querySelectorAll('.friend-address')).map(i => i.value.trim()).filter(v => v);
-            if(!name || members.length === 0) return alert("Fill everything out!");
+            const members = Array.from(document.querySelectorAll('.friend-address')).map(i => i.value);
             
-            state.groups.push({ id: Date.now(), name, members });
-            localStorage.setItem('ss_groups', JSON.stringify(state.groups));
-            showScreen('dashboard');
+            const newGroup = { id: Date.now().toString(), name, members: [state.wallet.publicKey.toString(), ...members] };
+            state.groups.push(newGroup);
+            localStorage.setItem('splitsol_groups', JSON.stringify(state.groups));
+            
+            showToast("Group Created!", "success");
+            updateStats();
+            goTo('dashboard');
+            return false;
         }
 
-        function loadGroupsList() {
-            const container = document.getElementById('groups-container');
-            container.innerHTML = state.groups.length ? '' : '<p>No groups yet.</p>';
-            state.groups.forEach(g => {
-                const btn = document.createElement('button');
-                btn.className = 'menu-btn';
-                btn.innerHTML = `<strong>${g.name}</strong><br><small>${g.members.length} members</small>`;
-                btn.onclick = () => {
-                    state.selectedGroup = g;
-                    document.getElementById('target-group-name').textContent = "Group: " + g.name;
-                    showScreen('expense-details');
-                };
-                container.appendChild(btn);
-            });
-            showScreen('use-existing');
+        function renderGroups() {
+            const container = document.getElementById('groups-list');
+            container.innerHTML = state.groups.map(g => `
+                <div class="stat-card" style="cursor:pointer; margin-bottom:10px" onclick="selectGroup('${g.id}')">
+                    <strong>${g.name}</strong> (${g.members.length} members)
+                </div>
+            `).join('');
         }
 
-        function generateQRs() {
-            const desc = document.getElementById('exp-desc').value;
-            const total = parseFloat(document.getElementById('exp-amount').value);
-            if(!desc || !total) return alert("Enter amount and description");
+        function selectGroup(id) {
+            state.selectedGroup = state.groups.find(g => g.id === id);
+            document.getElementById('selected-group-info').textContent = `Group: ${state.selectedGroup.name}`;
+            goTo('expense-details');
+        }
 
-            const perPerson = (total / state.selectedGroup.members.length).toFixed(4);
-            const container = document.getElementById('qr-display');
+        function handleCreateExpense(e) {
+            e.preventDefault();
+            const desc = document.getElementById('expense-desc').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            
+            const expense = {
+                id: Date.now().toString(),
+                description: desc,
+                totalAmount: amount,
+                groupName: state.selectedGroup.name,
+                members: state.selectedGroup.members,
+                settled: false
+            };
+            
+            state.expenses.push(expense);
+            localStorage.setItem('splitsol_expenses', JSON.stringify(state.expenses));
+            generateQRCodes(expense);
+            updateStats();
+            goTo('payment-qr');
+            return false;
+        }
+
+        
+
+        function generateQRCodes(expense) {
+            const container = document.getElementById('qr-grid');
             container.innerHTML = '';
-            document.getElementById('summary-text').textContent = `${desc}: Each person owes ${perPerson} SOL`;
+            const perPerson = (expense.totalAmount / expense.members.length).toFixed(4);
+            
+            document.getElementById('payment-qr-info').innerHTML = `<strong>${expense.description}</strong>: ${perPerson} SOL each`;
 
-            state.selectedGroup.members.forEach((addr, i) => {
-                // Generate unique Reference Key for verification
-                const reference = solanaWeb3.Keypair.generate().publicKey.toString();
-                
+            expense.members.forEach((m, i) => {
                 const card = document.createElement('div');
                 card.className = 'qr-card';
-                card.id = `card-${i}`;
-                
-                const solanaUrl = `solana:${addr}?amount=${perPerson}&reference=${reference}&label=SplitSol&message=${encodeURIComponent(desc)}`;
-
-                card.innerHTML = `
-                    <div class="status-badge" id="status-${i}">PENDING</div>
-                    <div id="qr-${i}" class="qr-code"></div>
-                    <p style="font-size:0.8rem; margin-bottom:10px;">${addr.slice(0,6)}...${addr.slice(-4)}</p>
-                    <button class="verify-btn" id="btn-${i}" onclick="verifyOnChain('${reference}', ${i})">Verify Payment</button>
-                `;
+                card.innerHTML = `<p>${m.slice(0,4)}...${m.slice(-4)}</p><div id="qr-${i}" class="qr-code"></div><p>${perPerson} SOL</p>`;
                 container.appendChild(card);
-
-                new QRCode(document.getElementById(`qr-${i}`), { text: solanaUrl, width: 160, height: 160 });
+                
+                // Construct real Solana Pay URL
+                const solanaUrl = `solana:${m}?amount=${perPerson}&label=SplitSol&message=${encodeURIComponent(expense.description)}`;
+                
+                new QRCode(document.getElementById(`qr-${i}`), {
+                    text: solanaUrl,
+                    width: 128, height: 128
+                });
             });
-
-            showScreen('payment-qr');
         }
 
-        async function verifyOnChain(refStr, index) {
-            const btn = document.getElementById(`btn-${index}`);
-            btn.innerText = "Checking...";
-            
-            try {
-                const reference = new solanaWeb3.PublicKey(refStr);
-                const signatures = await connection.getSignaturesForAddress(reference, { limit: 5 });
+        function renderHistory() {
+            const container = document.getElementById('payments-list');
+            container.innerHTML = state.expenses.map(e => `
+                <div class="stat-card" style="margin-bottom:10px">
+                    <strong>${e.description}</strong> - ${e.totalAmount} SOL (${e.groupName})
+                </div>
+            `).join('');
+        }
 
-                if (signatures.length > 0) {
-                    document.getElementById(`card-${index}`).classList.add('paid');
-                    document.getElementById(`status-${index}`).innerText = "✅ PAID";
-                    btn.style.display = 'none';
-                } else {
-                    alert("No payment found yet. Make sure to complete the transaction in Phantom first!");
-                    btn.innerText = "Verify Payment";
-                }
-            } catch (e) {
-                alert("RPC Error. Try again.");
-                btn.innerText = "Verify Payment";
-            }
+        function updateStats() {
+            document.getElementById('stat-groups').textContent = state.groups.length;
+            document.getElementById('stat-pending').textContent = state.expenses.filter(e => !e.settled).length;
+            document.getElementById('stat-settled').textContent = state.expenses.filter(e => e.settled).length;
         }
     </script>
 </body>
