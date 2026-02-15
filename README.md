@@ -44,25 +44,15 @@ Or use Python: python -m http.server 8000
 Access the app: Open http://localhost:5500 (or 8000) in your browser.
 
 📂 Project Structure
-Plaintext
-.
-├── index.html          # Main application UI
-├── app.js              # Frontend logic and Solana integration
-├── idl.json            # The "Interface" for the smart contract
-├── assets/             # Images and styling assets
-└── README.md           # You are here!
+
+
+1. index.html          # Main application UI
+2. app.js              # Frontend logic and Solana integration
+3. idl.json            # The "Interface" for the smart contract
+4. README.md           # You are here!
 📜 Smart Contract Logic
 The program is deployed on Solana Devnet. It uses Program Derived Addresses (PDAs) to store group and expense data securely.
 
 Program ID: HU4wkHJ97BBeabrchh94ZvMPViJrh8dCZfA3K5Cz1qbY
 
-🤝 Contributing
-Fork the Project
 
-Create your Feature Branch (git checkout -b feature/AmazingFeature)
-
-Commit your Changes (git commit -m 'Add some AmazingFeature')
-
-Push to the Branch (git push origin feature/AmazingFeature)
-
-Open a Pull Request
