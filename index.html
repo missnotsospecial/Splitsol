@@ -3,272 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SplitSol | Real-Time Verification</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>SplitSol - Ultimate Expense Splitter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 
     <style>
-        :root {
-            --primary: #9945FF;
-            --secondary: #14F195;
-            --dark: #121212;
-            --card: #1E1E1E;
-            --text: #FFFFFF;
-            --gray: #A0A0A0;
-        }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--dark); 
-            color: var(--text);
-            line-height: 1.6;
-            padding: 20px;
+        :root {
+            --primary: #FF6B6B; --primary-light: #FFD93D; --secondary: #667eea;
+            --success: #14F195; --danger: #FF5252; --white: #FFFFFF;
+            --charcoal: #2D3748; --radius-xl: 24px; --radius-lg: 16px;
         }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #FFF9F0 0%, #FFE8CC 100%); min-height: 100vh; padding: 20px; color: var(--charcoal); }
+        
+        /* Layout */
+        .header { max-width: 800px; margin: 0 auto 2rem; background: var(--white); padding: 1rem 1.5rem; border-radius: var(--radius-lg); box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .wallet-btn { padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%); color: var(--white); border: none; border-radius: 50px; font-weight: 600; cursor: pointer; }
+        
+        .screen { display: none; max-width: 800px; margin: 0 auto; background: var(--white); padding: 2rem; border-radius: var(--radius-xl); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
+        .screen.active { display: block; }
 
-        .container { max-width: 600px; margin: 0 auto; }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 0;
-            border-bottom: 1px solid #333;
-            margin-bottom: 30px;
-        }
-
-        .logo { font-weight: 700; font-size: 1.5rem; letter-spacing: -1px; }
-        .logo span { color: var(--secondary); }
-
-        .card {
-            background: var(--card);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        h2 { margin-bottom: 20px; font-size: 1.2rem; }
-
-        input {
-            width: 100%;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 12px;
-            border: 1px solid #333;
-            background: #2A2A2A;
-            color: white;
-            font-size: 1rem;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 1rem;
-        }
-
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-secondary { background: var(--secondary); color: var(--dark); margin-top: 10px; }
-        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
-
-        .screen { display: none; }
-        .active { display: block; }
-
-        /* QR Section */
-        .qr-wrapper {
-            background: white;
-            padding: 15px;
-            border-radius: 15px;
-            display: inline-block;
-            margin: 15px 0;
-        }
-
-        .friend-card {
-            border: 1px solid #333;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            text-align: center;
-            transition: 0.3s;
-        }
-
-        .friend-card.paid {
-            border-color: var(--secondary);
-            background: rgba(20, 241, 149, 0.1);
-        }
-
-        .status-tag {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: #333;
-            font-weight: 700;
-        }
-
-        .paid .status-tag { background: var(--secondary); color: var(--dark); }
-
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 10px;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* UI Elements */
+        .menu-btn { width: 100%; padding: 1.5rem; background: var(--white); border: 2px solid #EEE; border-radius: var(--radius-lg); margin-bottom: 1rem; cursor: pointer; text-align: left; transition: 0.2s; }
+        .menu-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .form-input { width: 100%; padding: 1rem; border: 2px solid #EEE; border-radius: 12px; margin-bottom: 1rem; font-size: 1rem; }
+        .submit-btn { width: 100%; padding: 1.25rem; background: linear-gradient(135deg, #FF6B6B 0%, #FFD93D 100%); color: var(--white); border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        
+        /* QR Grid */
+        .qr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+        .qr-card { background: #F8FAFC; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center; border: 2px solid transparent; transition: 0.3s; }
+        .qr-card.paid { border-color: var(--success); background: #f0fff4; }
+        .qr-code { background: white; padding: 10px; border-radius: 10px; margin: 15px auto; display: flex; justify-content: center; }
+        
+        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #EEE; margin-bottom: 10px; }
+        .paid .status-badge { background: var(--success); color: #065f46; }
+        
+        .verify-btn { background: var(--secondary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; }
+        .back-link { color: var(--gray); text-decoration: none; font-size: 0.9rem; cursor: pointer; display: block; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <div class="logo">SPLIT<span>SOL</span></div>
-        <div id="connection-status" style="font-size: 0.8rem; color: var(--secondary);">Devnet Active</div>
-    </header>
-
-    <div id="step-1" class="screen active">
-        <div class="card">
-            <h2>1. Expense Details</h2>
-            <input type="text" id="bill-name" placeholder="Dinner at Nobu">
-            <input type="number" id="total-amount" placeholder="Total SOL (e.g. 0.5)">
-        </div>
-
-        <div class="card">
-            <h2>2. Friends (Wallet Addresses)</h2>
-            <div id="friend-inputs">
-                <input type="text" class="friend-addr" placeholder="Enter Wallet Address">
-            </div>
-            <button class="btn btn-secondary" onclick="addFriendField()" style="font-size: 0.8rem; padding: 10px;">+ Add Friend</button>
-        </div>
-
-        <button class="btn btn-primary" onclick="generateSplit()">Generate Payment Requests</button>
+    <div class="header">
+        <div class="logo">💰 SplitSol</div>
+        <button class="wallet-btn" id="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
     </div>
 
-    <div id="step-2" class="screen">
-        <button onclick="resetApp()" style="background: none; border: none; color: var(--gray); cursor: pointer; margin-bottom: 20px;">← Back to edit</button>
-        <div id="qr-container"></div>
+    <div id="dashboard" class="screen active">
+        <h1>Hey there!</h1>
+        <p style="color: #94a3b8; margin-bottom: 2rem;">Ready to split some bills on Solana?</p>
+        <button class="menu-btn" onclick="showScreen('create-group')">
+            <strong>+ Create New Group</strong><br><small>Add your friends' wallet addresses</small>
+        </button>
+        <button class="menu-btn" onclick="loadGroupsList();">
+            <strong>💳 Split an Expense</strong><br><small>Select a group and generate QRs</small>
+        </button>
     </div>
-</div>
 
-<script>
-    // Initialize Solana Connection
-    const connection = new solanaWeb3.Connection("https://api.devnet.solana.com", "confirmed");
-    
-    let activeRequests = [];
+    <div id="create-group" class="screen">
+        <span class="back-link" onclick="showScreen('dashboard')">← Back</span>
+        <h2>New Group</h2>
+        <input type="text" class="form-input" id="group-name" placeholder="Group Name (e.g. Pizza Night)">
+        <div id="friends-list">
+            <input type="text" class="form-input friend-address" placeholder="Friend's Wallet Address">
+        </div>
+        <button class="submit-btn" style="background:#667eea; margin-bottom:10px;" onclick="addFriendInput()">+ Add Friend</button>
+        <button class="submit-btn" onclick="saveGroup()">Create Group</button>
+    </div>
 
-    function addFriendField() {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'friend-addr';
-        input.placeholder = 'Enter Wallet Address';
-        document.getElementById('friend-inputs').appendChild(input);
-    }
+    <div id="use-existing" class="screen">
+        <span class="back-link" onclick="showScreen('dashboard')">← Back</span>
+        <h2>Select a Group</h2>
+        <div id="groups-container"></div>
+    </div>
 
-    function resetApp() {
-        document.getElementById('step-2').classList.remove('active');
-        document.getElementById('step-1').classList.add('active');
-        activeRequests = [];
-    }
+    <div id="expense-details" class="screen">
+        <span class="back-link" onclick="showScreen('use-existing')">← Back</span>
+        <h2>Expense Details</h2>
+        <p id="target-group-name" style="font-weight: 600; margin-bottom: 1rem;"></p>
+        <input type="text" class="form-input" id="exp-desc" placeholder="What is this for?">
+        <input type="number" class="form-input" id="exp-amount" placeholder="Total SOL Amount">
+        <button class="submit-btn" onclick="generateQRs()">Generate & Track</button>
+    </div>
 
-    async function generateSplit() {
-        const name = document.getElementById('bill-name').value;
-        const total = parseFloat(document.getElementById('total-amount').value);
-        const addrs = Array.from(document.querySelectorAll('.friend-addr')).map(i => i.value.trim()).filter(v => v);
+    <div id="payment-qr" class="screen">
+        <span class="back-link" onclick="showScreen('dashboard')">← Reset</span>
+        <h2>Scan & Pay</h2>
+        <p id="summary-text" style="color: #64748b; margin-bottom: 1rem;"></p>
+        <div class="qr-grid" id="qr-display"></div>
+    </div>
 
-        if (!name || !total || addrs.length === 0) {
-            alert("Please fill in all fields.");
-            return;
+    <script>
+        const connection = new solanaWeb3.Connection("https://api.devnet.solana.com", "confirmed");
+        let state = {
+            groups: JSON.parse(localStorage.getItem('ss_groups') || '[]'),
+            selectedGroup: null
+        };
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
 
-        const perPerson = (total / addrs.length).toFixed(4);
-        const container = document.getElementById('qr-container');
-        container.innerHTML = `<h2>Splitting: ${name}</h2><p style="color:var(--gray); margin-bottom:20px;">${perPerson} SOL per person</p>`;
+        async function connectWallet() {
+            if (window.solana) {
+                const resp = await window.solana.connect();
+                document.getElementById('wallet-btn').textContent = resp.publicKey.toString().slice(0,6) + '...';
+            } else { alert("Please install Phantom!"); }
+        }
 
-        document.getElementById('step-1').classList.remove('active');
-        document.getElementById('step-2').classList.add('active');
+        function addFriendInput() {
+            const input = document.createElement('input');
+            input.className = 'form-input friend-address';
+            input.placeholder = "Friend's Wallet Address";
+            document.getElementById('friends-list').appendChild(input);
+        }
 
-        addrs.forEach((addr, index) => {
-            // Generate a unique Reference Key for this specific person's payment
-            const reference = solanaWeb3.Keypair.generate().publicKey;
+        function saveGroup() {
+            const name = document.getElementById('group-name').value;
+            const members = Array.from(document.querySelectorAll('.friend-address')).map(i => i.value.trim()).filter(v => v);
+            if(!name || members.length === 0) return alert("Fill everything out!");
             
-            activeRequests.push({
-                address: addr,
-                amount: perPerson,
-                reference: reference.toString(),
-                status: 'pending'
+            state.groups.push({ id: Date.now(), name, members });
+            localStorage.setItem('ss_groups', JSON.stringify(state.groups));
+            showScreen('dashboard');
+        }
+
+        function loadGroupsList() {
+            const container = document.getElementById('groups-container');
+            container.innerHTML = state.groups.length ? '' : '<p>No groups yet.</p>';
+            state.groups.forEach(g => {
+                const btn = document.createElement('button');
+                btn.className = 'menu-btn';
+                btn.innerHTML = `<strong>${g.name}</strong><br><small>${g.members.length} members</small>`;
+                btn.onclick = () => {
+                    state.selectedGroup = g;
+                    document.getElementById('target-group-name').textContent = "Group: " + g.name;
+                    showScreen('expense-details');
+                };
+                container.appendChild(btn);
+            });
+            showScreen('use-existing');
+        }
+
+        function generateQRs() {
+            const desc = document.getElementById('exp-desc').value;
+            const total = parseFloat(document.getElementById('exp-amount').value);
+            if(!desc || !total) return alert("Enter amount and description");
+
+            const perPerson = (total / state.selectedGroup.members.length).toFixed(4);
+            const container = document.getElementById('qr-display');
+            container.innerHTML = '';
+            document.getElementById('summary-text').textContent = `${desc}: Each person owes ${perPerson} SOL`;
+
+            state.selectedGroup.members.forEach((addr, i) => {
+                // Generate unique Reference Key for verification
+                const reference = solanaWeb3.Keypair.generate().publicKey.toString();
+                
+                const card = document.createElement('div');
+                card.className = 'qr-card';
+                card.id = `card-${i}`;
+                
+                const solanaUrl = `solana:${addr}?amount=${perPerson}&reference=${reference}&label=SplitSol&message=${encodeURIComponent(desc)}`;
+
+                card.innerHTML = `
+                    <div class="status-badge" id="status-${i}">PENDING</div>
+                    <div id="qr-${i}" class="qr-code"></div>
+                    <p style="font-size:0.8rem; margin-bottom:10px;">${addr.slice(0,6)}...${addr.slice(-4)}</p>
+                    <button class="verify-btn" id="btn-${i}" onclick="verifyOnChain('${reference}', ${i})">Verify Payment</button>
+                `;
+                container.appendChild(card);
+
+                new QRCode(document.getElementById(`qr-${i}`), { text: solanaUrl, width: 160, height: 160 });
             });
 
-            const card = document.createElement('div');
-            card.className = 'friend-card';
-            card.id = `card-${index}`;
+            showScreen('payment-qr');
+        }
+
+        async function verifyOnChain(refStr, index) {
+            const btn = document.getElementById(`btn-${index}`);
+            btn.innerText = "Checking...";
             
-            // Solana Pay URL format
-            const solanaUrl = `solana:${addr}?amount=${perPerson}&reference=${reference.toString()}&label=SplitSol&message=${encodeURIComponent(name)}`;
+            try {
+                const reference = new solanaWeb3.PublicKey(refStr);
+                const signatures = await connection.getSignaturesForAddress(reference, { limit: 5 });
 
-            card.innerHTML = `
-                <div class="status-tag" id="status-${index}">Unpaid</div>
-                <div class="qr-wrapper" id="qr-${index}"></div>
-                <p style="font-size: 0.8rem; font-family: monospace;">${addr.slice(0,4)}...${addr.slice(-4)}</p>
-                <button class="btn btn-secondary" id="btn-${index}" onclick="verify('${reference.toString()}', ${index})">Verify Payment</button>
-            `;
-            container.appendChild(card);
-
-            new QRCode(document.getElementById(`qr-${index}`), {
-                text: solanaUrl,
-                width: 180,
-                height: 180,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-        });
-    }
-
-    async function verify(referenceStr, index) {
-        const btn = document.getElementById(`btn-${index}`);
-        const status = document.getElementById(`status-${index}`);
-        const card = document.getElementById(`card-${index}`);
-        
-        btn.disabled = true;
-        btn.innerHTML = `<span class="loader"></span>Checking Ledger...`;
-
-        try {
-            const reference = new solanaWeb3.PublicKey(referenceStr);
-            
-            // Search for transactions containing our unique reference key
-            const signatures = await connection.getSignaturesForAddress(reference, { limit: 10 });
-
-            if (signatures.length > 0) {
-                // Payment Found!
-                status.innerText = "Confirmed";
-                card.classList.add('paid');
-                btn.style.display = "none";
-                alert("Payment Verified on Blockchain!");
-            } else {
-                alert("No transaction found yet. Please scan the QR and complete the payment in Phantom first.");
-                btn.disabled = false;
+                if (signatures.length > 0) {
+                    document.getElementById(`card-${index}`).classList.add('paid');
+                    document.getElementById(`status-${index}`).innerText = "✅ PAID";
+                    btn.style.display = 'none';
+                } else {
+                    alert("No payment found yet. Make sure to complete the transaction in Phantom first!");
+                    btn.innerText = "Verify Payment";
+                }
+            } catch (e) {
+                alert("RPC Error. Try again.");
                 btn.innerText = "Verify Payment";
             }
-        } catch (e) {
-            console.error(e);
-            alert("Verification error. Check console.");
-            btn.disabled = false;
-            btn.innerText = "Verify Payment";
         }
-    }
-</script>
-
+    </script>
 </body>
 </html>
