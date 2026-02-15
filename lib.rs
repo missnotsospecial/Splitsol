@@ -100,32 +100,38 @@ pub mod splitsol {
     /// 3. Payment is transferred to payer
     /// 4. Member's paid status is updated
     /// 5. If all members paid, expense is marked as settled
-    pub fn pay_expense(
-        ctx: Context<PayExpense>,
-        member_index: u8,
-    ) -> Result<()> {
-        let expense = &mut ctx.accounts.expense;
-        let group = &ctx.accounts.group;
-        
-        // Validate member index
-        require!((member_index as usize) < group.members.len(), ErrorCode::InvalidMemberIndex);
-        
-        // Verify the payer is the correct member
-        let member_pubkey = group.members[member_index as usize];
-        require!(ctx.accounts.member.key() == member_pubkey, ErrorCode::UnauthorizedMember);
-        
-        // Check if already paid
-        require!(!expense.paid_status[member_index as usize], ErrorCode::AlreadyPaid);
-        
-        // Get the amount this member owes
-        let amount = expense.split_amounts[member_index as usize];
-        
-        // Transfer SOL from member to payer
-        let transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
+    pub fn pay_expense(ctx: Context<PayExpense>, member_index: u8) -> Result<()> {
+    let expense = &mut ctx.accounts.expense;
+    let group = &ctx.accounts.group;
+    
+    // 1. Validation
+    require!((member_index as usize) < group.members.len(), ErrorCode::InvalidMemberIndex);
+    let member_pubkey = group.members[member_index as usize];
+    require!(ctx.accounts.member.key() == member_pubkey, ErrorCode::UnauthorizedMember);
+    require!(!expense.paid_status[member_index as usize], ErrorCode::AlreadyPaid);
+    
+    let amount = expense.split_amounts[member_index as usize];
+    
+    // 2. Real SOL Transfer (Member -> Original Payer)
+    anchor_lang::solana_program::program::invoke(
+        &anchor_lang::solana_program::system_instruction::transfer(
             &ctx.accounts.member.key(),
             &ctx.accounts.payer.key(),
             amount,
-        );
+        ),
+        &[
+            ctx.accounts.member.to_account_info(),
+            ctx.accounts.payer.to_account_info(),
+        ],
+    )?;
+
+    // 3. Update State
+    expense.paid_status[member_index as usize] = true;
+    if expense.paid_status.iter().all(|&paid| paid) {
+        expense.settled = true;
+    }
+    Ok(())
+}
         
         anchor_lang::solana_program::program::invoke(
             &transfer_ix,
